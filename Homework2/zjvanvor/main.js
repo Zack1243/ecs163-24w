@@ -260,49 +260,71 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
             "HP": d.HP
         };
         });
-    
-// Plot 3: Parallel lines graph
-const g4 = d3.select("body").append("svg")
-    .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
-    .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
-    .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top})`);
-
-// Define parameters for the parallel lines graph
-const parameters = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'Catch_Rate'];
-
-// X
-const xScale = d3.scalePoint()
-    .domain(parameters)
-    .range([0, scatterWidth])
-    //.padding(1)
-
-// Y
-const yScale = d3.scalePoint()
-    .domain(parameters)
-    .range([0, scatterHeight]);
-
-// DRAW LINES
-function path(d) {
-    return line(parameters.map(function(p) { return [x(p), y[p](d[p])]; }));
-}
+    var parallelMargin = scatterMargin;
+    var parallelTop = scatterTop;
 
 
-// ADD LINES
-const g = g4.selectAll(".dimension")
-    .data(parameters)
-    .enter().append("g")
-    .attr("class", "dimension")
-    .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+    const parallelSvg = d3.select("body").append("svg")
+        .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
+        .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
+        .style("position", "absolute")
+        .style("left", `0px`)
+        .style("top", `${scatterTop}px`)
+        .append("g")
+        .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top})`);
 
+    const dimensions = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'Catch_Rate'];
 
-// ADD TITLE
-g.append("g")
-        .attr("class", "axis")
-        .each(function(d) { d3.select(this).call(axis.scale(y[d])); })
-      .append("text")
-        .style("text-anchor", "middle")
-        .attr("y", -9)
-        .text(function(d) { return d; });
+    // Create y scales for each dimension
+    const yScales = {};
+    dimensions.forEach(function(dimension) {
+        yScales[dimension] = d3.scaleLinear()
+            .domain(d3.extent(rawData, function(d) { return +d[dimension]; }))
+            .range([scatterHeight, 0]);
+    });
+
+    // Create x scale for the dimensions
+    const xScaleparallel = d3.scalePoint()
+        .range([0, scatterWidth])
+        .padding(1)
+        .domain(dimensions);
+
+    // Define path function for drawing lines
+    function path(d) {
+        return d3.line()(dimensions.map(function(p) { return [xScaleparallel(p), yScales[p](d[p])]; }));
+    }
+
+    // Draw lines for each data point
+    parallelSvg.selectAll("myPath")
+        .data(rawData)
+        .enter().append("path")
+        .attr("d", path)
+        .style("fill", "none")
+        .style("stroke", d => typeToColor[d.Type_1])
+        .style("opacity", 0.5);
+
+    // Add axes and axis labels
+    dimensions.forEach(function(dimension) {
+        parallelSvg.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(" + xScaleparallel(dimension) + ")")
+            .each(function(d) { d3.select(this).call(d3.axisLeft().scale(yScales[dimension])); })
+            .append("text")
+            .style("text-anchor", "middle")
+            .attr("y", -9)
+            .text(dimension)
+            .style("fill", "black")
+            .style("font-size", "15px");
+    });
+
+    parallelSvg.append("text")
+        .attr("x", (scatterWidth + scatterMargin.left + scatterMargin.right) / 2)
+        .attr("y", 0)
+        .attr("text-anchor", "middle")
+        .style("font-size", "20px")
+        .text("Pokemon Stats Comparison");
+
+    createLegend("body", typeColorMap, { left: width - 300, top: scatterTop + 70 });
 
 
 }).catch(function (error) {
