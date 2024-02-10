@@ -251,79 +251,111 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
 
 
 
-    // Plot 3: Parallel Line chart
-    
-    thirdData = rawData.map(d => {
-        return {
-            "Sp_Atk": +d.Sp_Atk,
-            "Attack": +d.Attack,
-            "Type_1": d.Type_1,
-            "Sp_Def": d.Sp_Def,
-            "Defense": d.Defense,
-            "Speed": d.Speed,
-            "HP": d.HP,
-            "Catch_Rate": d.Catch_Rate
-        };});
+  // Plot 3: Parallel Line chart
 
-    const scale = 1;
+// Modify rawData to extract necessary data
+const thirdData = rawData.map(d => {
+    return {
+        "Sp_Atk": +d.Sp_Atk,
+        "Attack": +d.Attack,
+        "Type_1": d.Type_1,
+        "Sp_Def": d.Sp_Def,
+        "Defense": d.Defense,
+        "Speed": d.Speed,
+        "HP": d.HP,
+        "Catch_Rate": d.Catch_Rate
+    };
+});
 
-    const g4 = svg.append("g")
-        .attr("transform", `translate(${scatterMargin.left -500 + scatterHeight}, ${scatterMargin.top +100+ scatterHeight * 1.5}) scale(${scale})`);
+const scale = 1;
 
-    const parameters = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'Catch_Rate'];
+const g4 = svg.append("g")
+    .attr("transform", `translate(${scatterMargin.left - 500 + scatterHeight}, ${scatterMargin.top + 100 + scatterHeight * 1.5}) scale(${scale})`);
 
-    // x axis
-    const xScale = d3.scalePoint()
-        .domain(parameters)
-        .range([0, scatterWidth*5])
-        .padding(1);
+const parameters = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'Catch_Rate'];
 
-    // Each y axis
-    const yScale = {};
-    parameters.forEach(function(parameter) {
-        yScale[parameter] = d3.scaleLinear()
-            .domain([0, d3.max(thirdData, d => +d[parameter])])
-            .range([scatterHeight, 0]);
-    });
-    // Function to draw line
-    function path(d) {
-        return d3.line()(parameters.map(function(parameter) { return [xScale(parameter), yScale[parameter](d[parameter])]; }));
-    }
+// x axis
+const xScale = d3.scalePoint()
+    .domain(parameters)
+    .range([0, scatterWidth * 5])
+    .padding(1);
 
-    // Draw lines
-    g4.selectAll("Line")
-        .data(thirdData)
-        .enter().append("path")
-        .style("fill", "none")
-        .attr("d", path)
-        .style("stroke", d => typeToColor[d.Type_1])
-        .style("opacity", 0.3)
-        
-    // Add axes and axis labels
-    parameters.forEach(function(parameter)
-    {
-        g4.append("g")
-            .attr("transform", "translate("+xScale(parameter)+")")
-            .attr("class", "axis")
-            .each(function(d)
-            {
-                d3.select(this).call(d3.axisLeft().scale(yScale[parameter ]));
-            })
-            .append("text")
-            .style("fill", "black")
-            .style("font-size", "15px")
-            .style("text-anchor", "middle")
-            .text(parameter)
-            .attr("y", -10);
-    });
+// Each y axis
+const yScale = {};
+parameters.forEach(function (parameter) {
+    yScale[parameter] = d3.scaleLinear()
+        .domain([0, d3.max(thirdData, d => +d[parameter])])
+        .range([scatterHeight, 0]);
+});
+// Function to draw line
+function path(d) {
+    return d3.line()(parameters.map(function (parameter) { return [xScale(parameter), yScale[parameter](d[parameter])]; }));
+}
 
-    g4.append("text")
-    .attr("x", (scatterWidth + 400 + scatterMargin.left + scatterMargin.right))
-    .attr("y", scatterMargin.top -40)
-    .style("font-size", "20px")
-    .attr("text-anchor", "middle")
-    .text("Stat Comparison between Pokemon Types");
 
+// Add axes and axis labels
+parameters.forEach(function (parameter) {
+    g4.append("g")
+        .attr("transform", "translate(" + xScale(parameter) + ")")
+        .attr("class", "axis")
+        .each(function (d) {
+            d3.select(this).call(d3.axisLeft().scale(yScale[parameter]));
+        })
+        .append("text")
+        .style("fill", "black")
+        .style("font-size", "15px")
+        .style("text-anchor", "middle")
+        .text(parameter)
+        .attr("y", -10);
+});
+
+// Draw lines
+g4.selectAll("Line")
+    .data(thirdData)
+    .enter().append("path")
+    .style("fill", "none")
+    .attr("d", path)
+    .style("stroke", d => typeToColor[d.Type_1])
+    .style("opacity", 0.5);
+
+// Create legend
+const legend2 = svg.append("g")
+    .attr("class", "legend")
+    .attr("transform", `translate(${scatterWidth + 900 + scatterMargin.left + scatterMargin.right}, ${scatterMargin.top + 500})`);
+
+const legendRects2 = legend2.selectAll(".legend-rect2")
+    .data(Object.keys(typeToColor))
+    .enter().append("rect")
+    .attr("class", "legend-rect2")
+    .attr("x", 0)
+    .attr("y", (d, i) => i * (legendRectSize + legendSpacing))
+    .attr("width", legendRectSize)
+    .attr("height", legendRectSize)
+    .style("fill", d => typeToColor[d])
+    .on("mouseover", highlightLegendColor2)
+    .on("mouseout", resetOpacity2);
+
+const legendTexts2 = legend2.selectAll(".legend-text2")
+    .data(Object.keys(typeToColor))
+    .enter().append("text")
+    .attr("class", "legend-text2")
+    .attr("x", legendRectSize + legendSpacing)
+    .attr("y", (d, i) => i * (legendRectSize + legendSpacing) + (legendRectSize / 2))
+    .attr("dy", "0.35em")
+    .text(d => d);
+
+function highlightLegendColor2(d) {
+    const type = d;
+    g4.selectAll("path")
+        .transition()
+        .style("opacity", Line => Line.Type_1 === type ? 0.5 : 0.3);
+}
+
+function resetOpacity2() {
+    g4.selectAll("path")
+        .transition()
+        .style("opacity", 0.5);
+}
 
 }).catch(function (error) {
     console.log(error);
