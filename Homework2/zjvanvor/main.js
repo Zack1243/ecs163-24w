@@ -187,6 +187,7 @@ const g2 = svg.append("g")
     .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
     .attr("transform", `translate(${scatterMargin.left + scatterWidth + legendRectSize + legendSpacing + 150}, ${scatterMargin.top + 30})`);
 
+    
 // Title above the pie chart
 g2.append("text")
     .attr("x", Math.min(scatterWidth, scatterHeight) / 2)
@@ -248,91 +249,52 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
     .attr("dy", "0.35em")
     .text(d => d.type);
 
-
-    const g3 = svg.append("g")
+    thirdData = rawData.map(d => {
+        return {
+            "Sp_Atk": +d.Sp_Atk,
+            "Attack": +d.Attack,
+            "Type_1": d.Type_1,
+            "Sp_Def": d.Sp_Def,
+            "Defense": d.Defense,
+            "Speed": d.Speed,
+            "HP": d.HP
+        };
+        });
+    
+// Plot 3: Parallel lines graph
+const g4 = d3.select("body").append("svg")
     .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
     .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
-    .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top + scatterHeight + 150})`);
+    .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top})`);
 
-// Title above the line graph
-g3.append("text")
-    .attr("x", scatterHeight + 200)
-    .attr("y", -10)
-    .attr("font-size", "20px")
-    .attr("text-anchor", "middle")
-    .text("Pokemon Stat Distribution");
+// Define parameters for the parallel lines graph
+const parameters = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed'];
 
-// Extract the parameters for the line graph
-const parameters = ["Attack", "Defense", "Speed", "Sp_Atk", "Sp_Def", "HP", "Catch Rate"];
-
-thirdData = rawData.map(d => {
-    return {
-        "Attack": d.Attack,
-        "Type": d.Type_1,
-        "Defense": d.Defense,
-        "Speed": d.Speed,
-        "Sp_Atk": d.Sp_Atk,
-        "Sp_Def": d.Sp_Def,
-        "HP": d.HP,
-        "Catch Rate": d.Catch_Rate
-    };
-});
-
-const xScale = d3.scaleBand()
-    .domain(parameters)
-    .range([0, scatterWidth*3])
-    .padding(1);
-
-// Draw x axis without the line
-g3.append("g")
-    .attr("transform", `translate(0, ${scatterHeight})`)
-    .call(d3.axisBottom(xScale)
-        .tickSize(0)
-        .tickPadding(10)) // Adjust the padding between ticks and labels
-    .select(".domain")
-    .remove(); // Remove the line for the x-axis
-
-// Draw labels for each tick
-g3.selectAll(".x-axis-label")
-    .data(parameters)
-    //.enter().append("text")
-    .attr("class", "x-axis-label")
-    .attr("x", d => xScale(d) + xScale.bandwidth() / 2)
-    .attr("y", scatterHeight + 20) // Adjust the position of the labels
-    .attr("text-anchor", "middle")
-    .text(d => d);
-
-// Draw y axes for each parameter
-parameters.forEach((parameter, index) => {
-    const yScale = d3.scaleLinear()
-        .domain([0, d3.max(thirdData, d => d[parameter])])
+// Create a scale for each dimension
+const yScales = {};
+parameters.forEach(function(parameter) {
+    yScales[parameter] = d3.scaleLinear()
+        .domain(d3.extent(thirdData, function(d) {return +d[parameter];}))
         .range([scatterHeight, 0]);
-
-    g3.append("g")
-        .attr("class", "axis")
-        .attr("transform", `translate(${xScale.bandwidth() / 2 + xScale(parameter)}, 0)`)
-        .call(d3.axisLeft(yScale).ticks(5).tickSize(0).tickPadding(8))
-        .append("text")
-        .attr("class", "axis-label")
-        .attr("x", 10)
-        .attr("y", -10)
-        .attr("text-anchor", "middle")
-        .attr("font-size", "14px")
-        .text(parameter);
-
-    // Draw lines
-    g3.selectAll(".line-" + parameter)
-    .data(thirdData)
-    .enter()
-    .append("line")
-    .style("fill", "none")
-    .attr("stroke", d => typeToColor[d.Type_1])
-    .attr("x1", d => xScale(parameter)) // Start x-coordinate
-    .attr("y1", d => yScale(d[parameter])) // Start y-coordinate
-    .attr("x2", xScale.bandwidth() / 2 + xScale(parameter)) // End x-coordinate
-    .attr("y2", d => yScale(d[parameter])) // End y-coordinate
-    .style("opacity", 0.7);
 });
+const xScaleparallel = d3.scalePoint()
+    .range([0, scatterWidth])
+    .padding(1)
+    .domain(parameters);
+
+function path(d) {
+    return d3.line()(parameters.map(function(p) {
+        return [xScaleparallel(p), yScales[p](d[p])];
+    }));
+}
+
+g4.selectAll("myPath")
+    .data(thirdData)
+    .enter().append("path")
+    .attr("d", path)
+    .style("fill", "none")
+    .style("stroke", d => typeToColor[d.Type_1])
+    .style("opacity", 0.4);
 
 
 
