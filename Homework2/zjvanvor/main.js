@@ -44,7 +44,7 @@ d3.csv("data/pokemon.csv").then(rawData => {
         "Flying": "#A890F0"
     };
 
-    // Plot 1: Scatterplot of Psychic type Attack vs Special Attack
+// Plot 1: Scatterplot of Psychic type Attack vs Special Attack
     firstData = rawData.map(d => {
         return {
             "Sp_Atk": +d.Sp_Atk,
@@ -60,7 +60,7 @@ d3.csv("data/pokemon.csv").then(rawData => {
     const g1 = svg.append("g")
         .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
         .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
-        .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top})`);
+        .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top + 30})`);
 
     // X label
     g1.append("text")
@@ -79,6 +79,14 @@ d3.csv("data/pokemon.csv").then(rawData => {
         .attr("transform", "rotate(-90)")
         .text("Special Attack");
 
+    // Title
+    g1.append("text")
+        .attr("x", scatterWidth / 2)
+        .attr("y", -10)
+        .attr("font-size", "20px")
+        .attr("text-anchor", "middle")
+        .text("Special Attack vs Attack (hover to focus)");
+
     // X ticks
     const x1 = d3.scaleLinear()
         .domain([0, d3.max(firstData, d => d.Attack)])
@@ -91,6 +99,8 @@ d3.csv("data/pokemon.csv").then(rawData => {
 
     const xAxisCall = d3.axisBottom(x1)
         .ticks(7);
+
+    
     g1.append("g")
         .attr("transform", `translate(0, ${scatterHeight})`)
         .call(xAxisCall)
@@ -109,7 +119,8 @@ d3.csv("data/pokemon.csv").then(rawData => {
     // Create legend
     const legend = svg.append("g")
         .attr("class", "legend")
-        .attr("transform", `translate(${teamMargin.left}, ${teamMargin.top})`);
+        .attr("transform", `translate(${scatterMargin.left + scatterWidth + 30}, ${scatterMargin.top + 30})`);
+
 
     const legendRectSize = 18;
     const legendSpacing = 4;
@@ -122,10 +133,10 @@ d3.csv("data/pokemon.csv").then(rawData => {
         .attr("y", (d, i) => i * (legendRectSize + legendSpacing))
         .attr("width", legendRectSize)
         .attr("height", legendRectSize)
-        .style("fill", d => typeToColor[d]);
-    // Add event listeners to legend elements
-legendRects.on("mouseover", highlightLegendColor)
-    .on("mouseout", resetOpacity);
+        .style("fill", d => typeToColor[d])
+        .on("mouseout", resetOpacity)
+        .on("mouseover", highlightLegendColor)
+
 
 function highlightLegendColor(d) {
     const type = d;
@@ -161,6 +172,22 @@ function highlightLegendColor(d) {
             .transition()
             .style("opacity", circle => circle.Type_1 === d.Type_1 ? opacityHigh : opacityLow);
     }
+
+    secondData = rawData.map(d => {
+        return {
+            "Type_1": d.Type_1
+        };
+    });
+
+    // Plot 2: pie chart of each pokemon type (numerical value)
+    const g2 = svg.append("g")
+        .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
+        .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
+        .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top + 30})`);
+
+    //g2.
+
+
 }).catch(function (error) {
     console.log(error);
 });
