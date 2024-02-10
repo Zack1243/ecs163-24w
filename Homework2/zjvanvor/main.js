@@ -268,34 +268,41 @@ const g4 = d3.select("body").append("svg")
     .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top})`);
 
 // Define parameters for the parallel lines graph
-const parameters = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed'];
+const parameters = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'Catch_Rate'];
 
-// Create a scale for each dimension
-const yScales = {};
-parameters.forEach(function(parameter) {
-    yScales[parameter] = d3.scaleLinear()
-        .domain(d3.extent(thirdData, function(d) {return +d[parameter];}))
-        .range([scatterHeight, 0]);
-});
-const xScaleparallel = d3.scalePoint()
+// X
+const xScale = d3.scalePoint()
+    .domain(parameters)
     .range([0, scatterWidth])
-    .padding(1)
-    .domain(parameters);
+    //.padding(1)
 
+// Y
+const yScale = d3.scalePoint()
+    .domain(parameters)
+    .range([0, scatterHeight]);
+
+// DRAW LINES
 function path(d) {
-    return d3.line()(parameters.map(function(p) {
-        return [xScaleparallel(p), yScales[p](d[p])];
-    }));
+    return line(parameters.map(function(p) { return [x(p), y[p](d[p])]; }));
 }
 
-g4.selectAll("myPath")
-    .data(thirdData)
-    .enter().append("path")
-    .attr("d", path)
-    .style("fill", "none")
-    .style("stroke", d => typeToColor[d.Type_1])
-    .style("opacity", 0.4);
 
+// ADD LINES
+const g = g4.selectAll(".dimension")
+    .data(parameters)
+    .enter().append("g")
+    .attr("class", "dimension")
+    .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+
+
+// ADD TITLE
+g.append("g")
+        .attr("class", "axis")
+        .each(function(d) { d3.select(this).call(axis.scale(y[d])); })
+      .append("text")
+        .style("text-anchor", "middle")
+        .attr("y", -9)
+        .text(function(d) { return d; });
 
 
 }).catch(function (error) {
