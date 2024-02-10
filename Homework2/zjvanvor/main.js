@@ -249,6 +249,10 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
     .attr("dy", "0.35em")
     .text(d => d.type);
 
+
+
+    // Plot 3: Parallel Line chart
+    
     thirdData = rawData.map(d => {
         return {
             "Sp_Atk": +d.Sp_Atk,
@@ -281,10 +285,9 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
             .domain([0, d3.max(thirdData, d => +d[parameter])])
             .range([scatterHeight, 0]);
     });
-
     // Function to draw line
     function path(d) {
-        return d3.line()(parameters.map(function(p) { return [xScale(p), yScale[p](d[p])]; }));
+        return d3.line()(parameters.map(function(parameter) { return [xScale(parameter), yScale[parameter](d[parameter])]; }));
     }
 
     // Draw lines
@@ -300,7 +303,7 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
     parameters.forEach(function(parameter)
     {
         g4.append("g")
-            .attr("transform", "translate("+xScale(parameter) + ")")
+            .attr("transform", "translate("+xScale(parameter)+")")
             .attr("class", "axis")
             .each(function(d)
             {
@@ -315,7 +318,7 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
     });
 
     g4.append("text")
-    .attr("x", (scatterWidth +1000+scatterMargin.left + scatterMargin.right) / 2)
+    .attr("x", (scatterWidth + 400 + scatterMargin.left + scatterMargin.right))
     .attr("y", scatterMargin.top -40)
     .style("font-size", "20px")
     .attr("text-anchor", "middle")
