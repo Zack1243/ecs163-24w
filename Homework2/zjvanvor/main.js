@@ -292,7 +292,12 @@ parameters.forEach(function (parameter) {
 function path(d) {
     return d3.line()(parameters.map(function (parameter) { return [xScale(parameter), yScale[parameter](d[parameter])]; }));
 }
-
+g4.append("text")
+    .attr("x", (scatterWidth + 400 + scatterMargin.left + scatterMargin.right))
+    .attr("y", scatterMargin.top - 40)
+    .style("font-size", "20px")
+    .attr("text-anchor", "middle")
+    .text("Stat Comparison between Pokemon Types");
 // Add axes and axis labels
 parameters.forEach(function (parameter) {
     g4.append("g")
