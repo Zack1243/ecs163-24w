@@ -180,6 +180,7 @@ function highlightLegendColor(d) {
 
 
 
+
 // Plot 2: pie chart of each pokemon type (numerical value)
 const g2 = svg.append("g")
     .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
@@ -246,6 +247,73 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
     .attr("y", (d, i) => i * (legendRectSize + legendSpacing) + (legendRectSize / 2))
     .attr("dy", "0.35em")
     .text(d => d.type);
+
+
+// Plot 3: Parallel line graph of each stat type
+const g3 = svg.append("g")
+    .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
+    .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
+    .attr("transform", `translate(${scatterMargin.left + scatterWidth + legendRectSize + legendSpacing}, ${scatterMargin.top + scatterHeight + 150})`);
+
+// Title above the line graph
+g3.append("text")
+    .attr("x", Math.min(scatterWidth, scatterHeight) / 2)
+    .attr("y", -10)
+    .attr("font-size", "20px")
+    .attr("text-anchor", "middle")
+    .text("Pokemon Stat Distribution");
+
+// Extract the parameters for the line graph
+const parameters = ["Attack", "Defense", "Speed", "Sp_Atk", "Sp_Def", "HP", "Catch Rate"];
+
+// Draw x axis
+g3.append("g")
+    .attr("transform", `translate(0, ${scatterHeight})`)
+    .call(d3.axisBottom(xScale));
+
+// Draw y axes for each parameter
+parameters.forEach((parameter, index) => {
+    const yScale = d3.scaleLinear()
+        .domain([0, d3.max(thirdData, d => d[parameter])])
+        .range([scatterHeight, 0]);
+
+    g3.append("g")
+        .attr("class", "axis")
+        .attr("transform", `translate(${xScale.bandwidth() / 2 + xScale(parameter)}, 0)`)
+        .call(d3.axisLeft(yScale).ticks(5).tickSize(0).tickPadding(8))
+        .append("text")
+        .attr("class", "axis-label")
+        .attr("x", 10)
+        .attr("y", -10)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "14px")
+        .text(parameter);
+
+    // Draw lines
+    g3.selectAll(".line-" + parameter)
+        .data(thirdData)
+        .enter().append("line")
+        .attr("class", "line-" + parameter)
+        .attr("x1", d => xScale(d.Type))
+        .attr("y1", d => yScale(d[parameter]))
+        .attr("x2", (d, i) => i === thirdData.length - 1 ? xScale(d.Type) : xScale(thirdData[i + 1].Type))
+        .attr("y2", (d, i) => i === thirdData.length - 1 ? yScale(d[parameter]) : yScale(thirdData[i + 1][parameter]))
+        .attr("stroke", typeToColor[d.Type])
+        .attr("stroke-width", 2)
+        .style("opacity", 0.7);
+});
+
+
+
+
+
+
+
+
+
+
+
+
 
 }).catch(function (error) {
     console.log(error);
