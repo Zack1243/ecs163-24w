@@ -278,7 +278,8 @@ const parameters = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'Cat
 const xScale = d3.scalePoint()
     .domain(parameters)
     .range([0, scatterWidth * 5])
-    .padding(1);
+    .padding(1)
+    
 
 // Each y axis
 const yScale = {};
@@ -291,7 +292,6 @@ parameters.forEach(function (parameter) {
 function path(d) {
     return d3.line()(parameters.map(function (parameter) { return [xScale(parameter), yScale[parameter](d[parameter])]; }));
 }
-
 
 // Add axes and axis labels
 parameters.forEach(function (parameter) {
@@ -308,7 +308,6 @@ parameters.forEach(function (parameter) {
         .text(parameter)
         .attr("y", -10);
 });
-
 // Draw lines
 g4.selectAll("Line")
     .data(thirdData)
@@ -316,7 +315,7 @@ g4.selectAll("Line")
     .style("fill", "none")
     .attr("d", path)
     .style("stroke", d => typeToColor[d.Type_1])
-    .style("opacity", 0.5);
+    .style("opacity", 0.7);
 
 // Create legend
 const legend2 = svg.append("g")
