@@ -249,15 +249,14 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
     .text(d => d.type);
 
 
-// Plot 3: Parallel line graph of each stat type
-const g3 = svg.append("g")
+    const g3 = svg.append("g")
     .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
     .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
-    .attr("transform", `translate(${scatterMargin.left + scatterWidth + legendRectSize + legendSpacing}, ${scatterMargin.top + scatterHeight + 150})`);
+    .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top + scatterHeight + 150})`);
 
 // Title above the line graph
 g3.append("text")
-    .attr("x", Math.min(scatterWidth, scatterHeight) / 2)
+    .attr("x", scatterHeight + 200)
     .attr("y", -10)
     .attr("font-size", "20px")
     .attr("text-anchor", "middle")
@@ -266,10 +265,42 @@ g3.append("text")
 // Extract the parameters for the line graph
 const parameters = ["Attack", "Defense", "Speed", "Sp_Atk", "Sp_Def", "HP", "Catch Rate"];
 
-// Draw x axis
+thirdData = rawData.map(d => {
+    return {
+        "Attack": d.Attack,
+        "Type": d.Type_1,
+        "Defense": d.Defense,
+        "Speed": d.Speed,
+        "Sp_Atk": d.Sp_Atk,
+        "Sp_Def": d.Sp_Def,
+        "HP": d.HP,
+        "Catch Rate": d.Catch_Rate
+    };
+});
+
+const xScale = d3.scaleBand()
+    .domain(parameters)
+    .range([0, scatterWidth*3])
+    .padding(1);
+
+// Draw x axis without the line
 g3.append("g")
     .attr("transform", `translate(0, ${scatterHeight})`)
-    .call(d3.axisBottom(xScale));
+    .call(d3.axisBottom(xScale)
+        .tickSize(0)
+        .tickPadding(10)) // Adjust the padding between ticks and labels
+    .select(".domain")
+    .remove(); // Remove the line for the x-axis
+
+// Draw labels for each tick
+g3.selectAll(".x-axis-label")
+    .data(parameters)
+    //.enter().append("text")
+    .attr("class", "x-axis-label")
+    .attr("x", d => xScale(d) + xScale.bandwidth() / 2)
+    .attr("y", scatterHeight + 20) // Adjust the position of the labels
+    .attr("text-anchor", "middle")
+    .text(d => d);
 
 // Draw y axes for each parameter
 parameters.forEach((parameter, index) => {
@@ -291,27 +322,17 @@ parameters.forEach((parameter, index) => {
 
     // Draw lines
     g3.selectAll(".line-" + parameter)
-        .data(thirdData)
-        .enter().append("line")
-        .attr("class", "line-" + parameter)
-        .attr("x1", d => xScale(d.Type))
-        .attr("y1", d => yScale(d[parameter]))
-        .attr("x2", (d, i) => i === thirdData.length - 1 ? xScale(d.Type) : xScale(thirdData[i + 1].Type))
-        .attr("y2", (d, i) => i === thirdData.length - 1 ? yScale(d[parameter]) : yScale(thirdData[i + 1][parameter]))
-        .attr("stroke", typeToColor[d.Type])
-        .attr("stroke-width", 2)
-        .style("opacity", 0.7);
+    .data(thirdData)
+    .enter()
+    .append("line")
+    .style("fill", "none")
+    .attr("stroke", d => typeToColor[d.Type_1])
+    .attr("x1", d => xScale(parameter)) // Start x-coordinate
+    .attr("y1", d => yScale(d[parameter])) // Start y-coordinate
+    .attr("x2", xScale.bandwidth() / 2 + xScale(parameter)) // End x-coordinate
+    .attr("y2", d => yScale(d[parameter])) // End y-coordinate
+    .style("opacity", 0.7);
 });
-
-
-
-
-
-
-
-
-
-
 
 
 
