@@ -19,7 +19,7 @@ let teamMargin = { top: 10, right: 30, bottom: 30, left: 60 },
 
 // Define opacity levels
 const opacityHigh = 1;
-const opacityLow = 0.3;
+const opacityLow = 0.1;
 
 d3.csv("data/pokemon.csv").then(rawData => {
     console.log("rawData", rawData);
@@ -257,74 +257,69 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
             "Sp_Def": d.Sp_Def,
             "Defense": d.Defense,
             "Speed": d.Speed,
-            "HP": d.HP
-        };
-        });
-    var parallelMargin = scatterMargin;
-    var parallelTop = scatterTop;
+            "HP": d.HP,
+            "Catch_Rate": d.Catch_Rate
+        };});
 
+    const scale = 1;
 
-    const parallelSvg = d3.select("body").append("svg")
-        .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
-        .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
-        .style("position", "absolute")
-        .style("left", `0px`)
-        .style("top", `${scatterTop}px`)
-        .append("g")
-        .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top})`);
+    const g4 = svg.append("g")
+        .attr("transform", `translate(${scatterMargin.left -500 + scatterHeight}, ${scatterMargin.top +100+ scatterHeight * 1.5}) scale(${scale})`);
 
-    const dimensions = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'Catch_Rate'];
+    const parameters = ['HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'Catch_Rate'];
 
-    // Create y scales for each dimension
-    const yScales = {};
-    dimensions.forEach(function(dimension) {
-        yScales[dimension] = d3.scaleLinear()
-            .domain(d3.extent(rawData, function(d) { return +d[dimension]; }))
+    // x axis
+    const xScale = d3.scalePoint()
+        .domain(parameters)
+        .range([0, scatterWidth*5])
+        .padding(1);
+
+    // Each y axis
+    const yScale = {};
+    parameters.forEach(function(parameter) {
+        yScale[parameter] = d3.scaleLinear()
+            .domain([0, d3.max(thirdData, d => +d[parameter])])
             .range([scatterHeight, 0]);
     });
 
-    // Create x scale for the dimensions
-    const xScaleparallel = d3.scalePoint()
-        .range([0, scatterWidth])
-        .padding(1)
-        .domain(dimensions);
-
-    // Define path function for drawing lines
+    // Function to draw line
     function path(d) {
-        return d3.line()(dimensions.map(function(p) { return [xScaleparallel(p), yScales[p](d[p])]; }));
+        return d3.line()(parameters.map(function(p) { return [xScale(p), yScale[p](d[p])]; }));
     }
 
-    // Draw lines for each data point
-    parallelSvg.selectAll("myPath")
-        .data(rawData)
+    // Draw lines
+    g4.selectAll("Line")
+        .data(thirdData)
         .enter().append("path")
-        .attr("d", path)
         .style("fill", "none")
+        .attr("d", path)
         .style("stroke", d => typeToColor[d.Type_1])
-        .style("opacity", 0.5);
-
+        .style("opacity", 0.3)
+        
     // Add axes and axis labels
-    dimensions.forEach(function(dimension) {
-        parallelSvg.append("g")
+    parameters.forEach(function(parameter)
+    {
+        g4.append("g")
+            .attr("transform", "translate("+xScale(parameter) + ")")
             .attr("class", "axis")
-            .attr("transform", "translate(" + xScaleparallel(dimension) + ")")
-            .each(function(d) { d3.select(this).call(d3.axisLeft().scale(yScales[dimension])); })
+            .each(function(d)
+            {
+                d3.select(this).call(d3.axisLeft().scale(yScale[parameter ]));
+            })
             .append("text")
-            .style("text-anchor", "middle")
-            .attr("y", -9)
-            .text(dimension)
             .style("fill", "black")
-            .style("font-size", "15px");
+            .style("font-size", "15px")
+            .style("text-anchor", "middle")
+            .text(parameter)
+            .attr("y", -10);
     });
 
-    parallelSvg.append("text")
-        .attr("x", (scatterWidth + scatterMargin.left + scatterMargin.right) / 2)
-        .attr("y", 0)
-        .attr("text-anchor", "middle")
-        .style("font-size", "20px")
-        .text("Pokemon Stats Comparison");
-
-    createLegend("body", typeColorMap, { left: width - 300, top: scatterTop + 70 });
+    g4.append("text")
+    .attr("x", (scatterWidth +1000+scatterMargin.left + scatterMargin.right) / 2)
+    .attr("y", scatterMargin.top -40)
+    .style("font-size", "20px")
+    .attr("text-anchor", "middle")
+    .text("Stat Comparison between Pokemon Types");
 
 
 }).catch(function (error) {
