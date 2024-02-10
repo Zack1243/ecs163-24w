@@ -100,7 +100,6 @@ d3.csv("data/pokemon.csv").then(rawData => {
     const xAxisCall = d3.axisBottom(x1)
         .ticks(7);
 
-    
     g1.append("g")
         .attr("transform", `translate(0, ${scatterHeight})`)
         .call(xAxisCall)
@@ -179,14 +178,74 @@ function highlightLegendColor(d) {
         };
     });
 
-    // Plot 2: pie chart of each pokemon type (numerical value)
-    const g2 = svg.append("g")
-        .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
-        .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
-        .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top + 30})`);
 
-    //g2.
 
+// Plot 2: pie chart of each pokemon type (numerical value)
+const g2 = svg.append("g")
+    .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
+    .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
+    .attr("transform", `translate(${scatterMargin.left + scatterWidth + legendRectSize + legendSpacing + 150}, ${scatterMargin.top + 30})`);
+
+// Title above the pie chart
+g2.append("text")
+    .attr("x", Math.min(scatterWidth, scatterHeight) / 2)
+    .attr("y", -10)
+    .attr("font-size", "20px")
+    .attr("text-anchor", "middle")
+    .text("Pokemon Type Distribution");
+
+// Count the occurrences of each Pokémon type
+const typeCounts = {};
+rawData.forEach(d => {
+    const type = d.Type_1;
+    if (typeCounts[type]) {
+        typeCounts[type]++;
+    } else {
+        typeCounts[type] = 1;
+    }
+});
+
+// Convert the counts to an array of objects for the pie layout
+const pieData = Object.keys(typeCounts).map(type => {
+    return { type: type, count: typeCounts[type] };
+});
+
+const pie = d3.pie().value(d => d.count);
+const arc = d3.arc().innerRadius(0).outerRadius(Math.min(scatterWidth, scatterHeight) / 2 - 10);
+
+const arcs = g2.selectAll(".arc")
+    .data(pie(pieData))
+    .enter().append("g")
+    .attr("class", "arc")
+    .attr("transform", `translate(${Math.min(scatterWidth, scatterHeight) / 2}, ${Math.min(scatterWidth, scatterHeight) / 2})`);
+
+arcs.append("path")
+    .attr("d", arc)
+    .attr("fill", d => typeToColor[d.data.type]);
+
+// Add legend for the pie chart
+const pieLegend = g2.append("g")
+    .attr("class", "legend")
+    .attr("transform", `translate(${Math.min(scatterWidth, scatterHeight) + 40}, 0)`);
+
+const pieLegendRects = pieLegend.selectAll(".legend-rect")
+    .data(pieData)
+    .enter().append("rect")
+    .attr("class", "legend-rect")
+    .attr("x", 0)
+    .attr("y", (d, i) => i * (legendRectSize + legendSpacing))
+    .attr("width", legendRectSize)
+    .attr("height", legendRectSize)
+    .style("fill", d => typeToColor[d.type]);
+
+const pieLegendTexts = pieLegend.selectAll(".legend-text")
+    .data(pieData)
+    .enter().append("text")
+    .attr("class", "legend-text")
+    .attr("x", legendRectSize + legendSpacing)
+    .attr("y", (d, i) => i * (legendRectSize + legendSpacing) + (legendRectSize / 2))
+    .attr("dy", "0.35em")
+    .text(d => d.type);
 
 }).catch(function (error) {
     console.log(error);
