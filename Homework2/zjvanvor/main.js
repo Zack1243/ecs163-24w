@@ -17,6 +17,10 @@ let teamMargin = { top: 10, right: 30, bottom: 30, left: 60 },
     teamWidth = width - teamMargin.left - teamMargin.right,
     teamHeight = height - 450 - teamMargin.top - teamMargin.bottom;
 
+// Define opacity levels
+const opacityHigh = 1;
+const opacityLow = 0.3;
+
 d3.csv("data/pokemon.csv").then(rawData => {
     console.log("rawData", rawData);
     const typeToColor = {
@@ -39,16 +43,18 @@ d3.csv("data/pokemon.csv").then(rawData => {
         "Steel": "#B8B8D0",
         "Flying": "#A890F0"
     };
-// Plot 1: Scatterplot of Psychic type Attack vs Special Attack
-    firstData = rawData.filter(d => d.Type_1 === "Psychic" || d.Type_2 === "Psychic").map(d => {
+
+    // Plot 1: Scatterplot of Psychic type Attack vs Special Attack
+    firstData = rawData.map(d => {
         return {
             "Sp_Atk": +d.Sp_Atk,
-            "Attack": +d.Attack
+            "Attack": +d.Attack,
+            "Type_1": d.Type_1
         };
     });
     console.log(firstData);
 
-    //plot 1
+    // Plot the scatterplot
     const svg = d3.select("svg");
 
     const g1 = svg.append("g")
@@ -100,24 +106,61 @@ d3.csv("data/pokemon.csv").then(rawData => {
 
     const rects = g1.selectAll("circle").data(firstData);
 
+    // Create legend
+    const legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${teamMargin.left}, ${teamMargin.top})`);
+
+    const legendRectSize = 18;
+    const legendSpacing = 4;
+
+    const legendRects = legend.selectAll(".legend-rect")
+        .data(Object.keys(typeToColor))
+        .enter().append("rect")
+        .attr("class", "legend-rect")
+        .attr("x", 0)
+        .attr("y", (d, i) => i * (legendRectSize + legendSpacing))
+        .attr("width", legendRectSize)
+        .attr("height", legendRectSize)
+        .style("fill", d => typeToColor[d]);
+    // Add event listeners to legend elements
+legendRects.on("mouseover", highlightLegendColor)
+    .on("mouseout", resetOpacity);
+
+function highlightLegendColor(d) {
+    const type = d;
+    g1.selectAll("circle")
+        .transition()
+        .style("opacity", circle => circle.Type_1 === type ? opacityHigh : opacityLow);
+}
+    const legendTexts = legend.selectAll(".legend-text")
+        .data(Object.keys(typeToColor))
+        .enter().append("text")
+        .attr("class", "legend-text")
+        .attr("x", legendRectSize + legendSpacing)
+        .attr("y", (d, i) => i * (legendRectSize + legendSpacing) + (legendRectSize / 2))
+        .attr("dy", "0.35em")
+        .text(d => d);
+
+    function resetOpacity() {
+        g1.selectAll("circle")
+            .transition()
+            .style("opacity", opacityHigh);
+    }
+
     rects.enter().append("circle")
-        .attr("cx", function (d) {
-            return x1(d.Attack);
-        })
-        .attr("cy", function (d) {
-            return y1(d.Sp_Atk);
-        })
+        .attr("cx", d => x1(d.Attack))
+        .attr("cy", d => y1(d.Sp_Atk))
         .attr("r", 3)
-        .attr("fill", '#F85888');
+        .attr("fill", d => typeToColor[d.Type_1])
+        .on("mouseover", highlightCircle)
+        .on("mouseout", resetOpacity);
 
-
-
-
-
-
-
-
-
+    function highlightCircle(d) {
+        g1.selectAll("circle")
+            .transition()
+            .style("opacity", circle => circle.Type_1 === d.Type_1 ? opacityHigh : opacityLow);
+    }
 }).catch(function (error) {
     console.log(error);
 });
