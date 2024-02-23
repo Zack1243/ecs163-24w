@@ -44,8 +44,7 @@ d3.csv("data/pokemon.csv").then(rawData => {
         "Flying": "#A890F0"
     };
 
-// Plot 1: Scatterplot of Psychic type Attack vs Special Attack
-// Plot 1: Scatterplot of Psychic type Attack vs Special Attack
+// Plot 1: Scatterplot of Psychic type Attack vs Special Attack. Has X/Y ZOom
 firstData = rawData.map(d => {
     return {
         "Sp_Atk": +d.Sp_Atk,
@@ -57,36 +56,39 @@ firstData = rawData.map(d => {
 // Plot the scatterplot
 const svg = d3.select("svg");
 
+// Clip the dots within the graph
+svg.append("defs").append("clipPath")
+    .attr("id", "scatter-clip")
+    .append("rect")
+    .attr("width", scatterWidth)
+    .attr("height", scatterHeight);
+
 const g1 = svg.append("g")
     .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
     .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
-    .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top + 30})`);
+    .attr("transform", `translate(${scatterMargin.left}, ${scatterMargin.top + 30})`)
 
-// Define the zoom function
+// Zoom goes from 0.5 to 10
 const zoom = d3.zoom()
-    .scaleExtent([0.5, 10]) // Set the scale extent for zooming
+    .scaleExtent([0.5, 10])
     .on("zoom", zoomed);
 
-// Apply the zoom behavior to the SVG element
 svg.call(zoom);
 
-// Function to handle zooming and panning
+// Zoom/panhandling
 function zoomed() {
-    // Get the current transform of the zoom behavior
+    // Get the transform
     const transform = d3.event.transform;
-    
-    // Update the x and y scales based on the current transform
-    const newX = transform.rescaleX(x1);
-    const newY = transform.rescaleY(y1);
-    
-    // Update the axes with the new scales
-    g1.select(".x-axis").call(xAxisCall.scale(newX));
-    g1.select(".y-axis").call(yAxisCall.scale(newY));
-    
-    // Update the circles with the new scales
+    const x1Zoom = transform.rescaleX(x1);
+    const y1Zoom = transform.rescaleY(y1);
+
+    g1.select(".x-axis").call(xAxisCall.scale(x1Zoom));
+    g1.select(".y-axis").call(yAxisCall.scale(y1Zoom));
+
     g1.selectAll(".data-circle")
-        .attr("cx", d => newX(d.Attack))
-        .attr("cy", d => newY(d.Sp_Atk));
+        .attr("cx", d => x1Zoom(d.Attack))
+        .attr("cy", d => y1Zoom(d.Sp_Atk))
+        .attr("clip-path", "url(#scatter-clip)");
 }
 
 // X label
@@ -112,7 +114,7 @@ g1.append("text")
     .attr("y", -10)
     .attr("font-size", "20px")
     .attr("text-anchor", "middle")
-    .text("Special Attack vs Attack (hover to focus)");
+    .text("Special Attack vs Attack (X/Y Zoom)");
 
 // X ticks
 const x1 = d3.scaleLinear()
@@ -162,15 +164,7 @@ const legendRects = legend.selectAll(".legend-rect")
     .attr("width", legendRectSize)
     .attr("height", legendRectSize)
     .style("fill", d => typeToColor[d])
-    .on("mouseout", resetOpacity)
-    .on("mouseover", highlightLegendColor)
 
-function highlightLegendColor(d) {
-    const type = d;
-    g1.selectAll(".data-circle")
-        .transition()
-        .style("opacity", circle => circle.Type_1 === type ? opacityHigh : opacityLow);
-}
 const legendTexts = legend.selectAll(".legend-text")
     .data(Object.keys(typeToColor))
     .enter().append("text")
@@ -180,26 +174,14 @@ const legendTexts = legend.selectAll(".legend-text")
     .attr("dy", "0.35em")
     .text(d => d);
 
-function resetOpacity() {
-    g1.selectAll(".data-circle")
-        .transition()
-        .style("opacity", opacityHigh);
-}
 
 rects.enter().append("circle")
     .attr("cx", d => x1(d.Attack))
     .attr("cy", d => y1(d.Sp_Atk))
     .attr("r", 3)
     .attr("fill", d => typeToColor[d.Type_1])
-    .attr("class", "data-circle")
-    .on("mouseover", highlightCircle)
-    .on("mouseout", resetOpacity);
+    .attr("class", "data-circle");
 
-function highlightCircle(d) {
-    g1.selectAll(".data-circle")
-        .transition()
-        .style("opacity", circle => circle.Type_1 === d.Type_1 ? opacityHigh : opacityLow);
-}
 
 
     secondData = rawData.map(d => {
@@ -281,9 +263,7 @@ const pieLegendTexts = pieLegend.selectAll(".legend-text")
 
 
 
- // Plot 3: Parallel Line chart
-
-// Modify rawData to extract necessary data
+ // Plot 3: Parallel Line chart with brush type interaction. Animation: slow transition
 const thirdData = rawData.map(d => {
     return {
         "Sp_Atk": +d.Sp_Atk,
@@ -339,12 +319,13 @@ parameters.forEach(function (parameter) {
         .attr("y", -10);
 });
 
+// Add graph title
 g4.append("text")
     .attr("x", (scatterWidth + 400 + scatterMargin.left + scatterMargin.right))
     .attr("y", scatterMargin.top - 40)
     .style("font-size", "20px")
     .attr("text-anchor", "middle")
-    .text("Stat Comparison between Pokemon Types");
+    .text("Stat Comparison between Pokemon Types (Brush type with slow, animated transition)");
 
 // Draw lines
 g4.selectAll("Line")
@@ -385,18 +366,19 @@ function highlightLegendColor2(d) {
     const type = d;
     g4.selectAll("path")
         .transition()
-        .style("opacity", line => line.Type_1 === type ? 0.5 : 0.1); // Adjusted opacity values
+        .style("opacity", line => line.Type_1 === type ? 0.5 : 0.1);
 }
 
 function resetOpacity2() {
     g4.selectAll("path")
         .transition()
-        .style("opacity", 0.5); // Reset opacity to 0.5
+        .style("opacity", 0.5);
 }
 
 
-// Added a brush interactive
+// Added a brush interactive element
 const brush = d3.brushY()
+    // Scale of the brush Bar
     .extent([[-30, 30], [10, scatterHeight]])
     .on("brush end", brushed);
 
@@ -430,6 +412,7 @@ function brushed() {
             });
         });
 
+    // Scale each brush to the height of the highest line
     const selectedData = thirdData.filter(function (d) {
         if (actives.every(function (active) {
             const dim = active.dimension;
@@ -439,14 +422,15 @@ function brushed() {
         }
     });
 
-    // Update lines based on brushed data
+
+// Add animated transiton w/ delay of 0.5 seconds to graph
 g4.selectAll("path")
-    .style("display", null) // Ensure all lines are visible initially
+    .style("display", null)
     .transition()
-    .duration(500) // Set the duration of the transition
-    .style("opacity", d => selectedData.includes(d) ? 1 : 0) // Update opacity based on selection
+    .duration(500)
+    .style("opacity", d => selectedData.includes(d) ? 1 : 0)
     .on("start", function () {
-        d3.select(this).style("display", null); // Ensure line is visible at the start of the transition
+        d3.select(this).style("display", null);
     });
 }
 
