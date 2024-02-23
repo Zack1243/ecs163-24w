@@ -365,6 +365,62 @@ function resetOpacity2() {
 }
 
 
+// Added a brush interactive
+const brush = d3.brushY()
+    .extent([[-30, 30], [10, scatterHeight]])
+    .on("brush end", brushed);
+
+g4.selectAll(".brush")
+    .data(parameters)
+    .enter().append("g")
+    .attr("class", "brush")
+    .attr("transform", d => "translate(" + xScale(d) + ")")
+    .each(function (d) {
+        d3.select(this).call(brush);
+    })
+    .selectAll("rect")
+    .attr("x", -8)
+    //.transition()
+    //.attr('cx', function(d) {
+      //return d;
+    //})
+    .attr("width", 16);
+    
+
+function brushed() {
+    const actives = [];
+    g4.selectAll(".brush")
+        .filter(function (d) {
+            return d3.brushSelection(this);
+        })
+        .each(function (d) {
+            actives.push({
+                dimension: d,
+                extent: d3.brushSelection(this)
+            });
+        });
+
+    const selectedData = thirdData.filter(function (d) {
+        if (actives.every(function (active) {
+            const dim = active.dimension;
+            return active.extent[0] <= yScale[dim](d[dim]) && yScale[dim](d[dim]) <= active.extent[1];
+        })) {
+            return true;
+        }
+    });
+
+    // Update lines based on brushed data
+g4.selectAll("path")
+    .style("display", null) // Ensure all lines are visible initially
+    .transition()
+    .duration(500) // Set the duration of the transition
+    .style("opacity", d => selectedData.includes(d) ? 1 : 0) // Update opacity based on selection
+    .on("start", function () {
+        d3.select(this).style("display", null); // Ensure line is visible at the start of the transition
+    });
+}
+
+
 }).catch(function (error) {
     console.log(error);
 });
